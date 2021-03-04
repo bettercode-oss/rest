@@ -15,7 +15,7 @@ type httpLogger struct {
 
 func newLogger() *httpLogger {
 	return &httpLogger{
-		log: log.New(os.Stderr, "bettercode-oss/http - ", log.LstdFlags),
+		log: log.New(os.Stderr, "bettercode-oss/rest - ", log.LstdFlags),
 	}
 }
 
