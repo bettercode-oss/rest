@@ -1,4 +1,4 @@
-module github.com/bettercode-oss/golang-rest-client
+module github.com/bettercode-oss/rest
 
 go 1.14
 
