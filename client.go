@@ -116,8 +116,9 @@ func (Client) Do(method, url string, header HttpHeader, body io.Reader) (*http.R
 		return nil, err
 	}
 
-	// TODO 200번대로 확장해야...
-	if response.StatusCode != http.StatusOK {
+	if response.StatusCode >= http.StatusOK && response.StatusCode <= http.StatusIMUsed {
+		return response, nil
+	} else {
 		b, err := ioutil.ReadAll(response.Body)
 		if err != nil {
 			return nil, err
@@ -125,6 +126,4 @@ func (Client) Do(method, url string, header HttpHeader, body io.Reader) (*http.R
 
 		return nil, errors.New(fmt.Sprintf("error : %v, %v", response.StatusCode, string(b)))
 	}
-
-	return response, nil
 }
