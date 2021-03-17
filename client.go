@@ -36,31 +36,31 @@ type Client struct {
 	ShowHttpLog bool
 }
 
-func (client Client) GetForJson(url string, header HttpHeader, responseObject interface{}) error {
-	return client.doForJson(MethodGet, url, header, nil, responseObject)
+func (c Client) GetForJson(url string, header HttpHeader, responseObject interface{}) error {
+	return c.doForJson(MethodGet, url, header, nil, responseObject)
 }
 
-func (client Client) GetForJsonWithRequestObject(url string, header HttpHeader, requestObject interface{}, responseObject interface{}) error {
-	return client.doForJson(MethodGet, url, header, requestObject, responseObject)
+func (c Client) GetForJsonWithRequestObject(url string, header HttpHeader, requestObject interface{}, responseObject interface{}) error {
+	return c.doForJson(MethodGet, url, header, requestObject, responseObject)
 }
 
-func (client Client) PostForJson(url string, header HttpHeader, requestObject interface{}) error {
-	return client.doForJson(MethodPost, url, header, requestObject, nil)
+func (c Client) PostForJson(url string, header HttpHeader, requestObject interface{}) error {
+	return c.doForJson(MethodPost, url, header, requestObject, nil)
 }
 
-func (client Client) PostForJsonWithResponseObject(url string, header HttpHeader, requestObject interface{}, responseObject interface{}) error {
-	return client.doForJson(MethodPost, url, header, requestObject, responseObject)
+func (c Client) PostForJsonWithResponseObject(url string, header HttpHeader, requestObject interface{}, responseObject interface{}) error {
+	return c.doForJson(MethodPost, url, header, requestObject, responseObject)
 }
 
-func (client Client) PutForJson(url string, header HttpHeader, requestObject interface{}) error {
-	return client.doForJson(MethodPut, url, header, requestObject, nil)
+func (c Client) PutForJson(url string, header HttpHeader, requestObject interface{}) error {
+	return c.doForJson(MethodPut, url, header, requestObject, nil)
 }
 
-func (client Client) DeleteForJson(url string, header HttpHeader, requestObject interface{}) error {
-	return client.doForJson(MethodDelete, url, header, requestObject, nil)
+func (c Client) DeleteForJson(url string, header HttpHeader, requestObject interface{}) error {
+	return c.doForJson(MethodDelete, url, header, requestObject, nil)
 }
 
-func (client Client) doForJson(method, url string, header HttpHeader, requestObject interface{}, responseObject interface{}) error {
+func (c Client) doForJson(method, url string, header HttpHeader, requestObject interface{}, responseObject interface{}) error {
 	if header == nil {
 		header = HttpHeader{}
 		header.Set("Content-Type", "application/json;charset=UTF-8")
@@ -79,7 +79,7 @@ func (client Client) doForJson(method, url string, header HttpHeader, requestObj
 		requestBody = bytes.NewBuffer(marshal)
 	}
 
-	response, err := client.Do(method, url, header, requestBody)
+	response, err := c.Do(method, url, header, requestBody)
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ func (client Client) doForJson(method, url string, header HttpHeader, requestObj
 	return nil
 }
 
-func (Client) Do(method, url string, header HttpHeader, body io.Reader) (*http.Response, error) {
+func (c Client) Do(method, url string, header HttpHeader, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
@@ -108,6 +108,7 @@ func (Client) Do(method, url string, header HttpHeader, body io.Reader) (*http.R
 
 	req.Header = http.Header(header)
 	client := &http.Client{
+		Timeout:   c.Timeout,
 		Transport: httplogger.NewLoggedTransport(http.DefaultTransport, newLogger()),
 	}
 	response, err := client.Do(req)

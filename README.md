@@ -46,6 +46,8 @@ go get github.com/bettercode-oss/rest
 
 ### REST API 호출 예시
 
+Rest Client는 기본적으로 HTTP Request 헤더에 `Content-Type`을 `application/json;charset=UTF-8`로 설정한다.
+
 * GET
 
 ```go
@@ -143,7 +145,7 @@ err := client.GetForJson("http://example.com", header, &responseObject)
 ```
 
 ### HTTP Request/Response 로깅(Logging)
-Rest Client 생성 시 `ShowHttpLog`를 `true`로 설정한다.
+Rest Client 생성할 때 `ShowHttpLog`를 `true`로 설정한다.
 ```go
 client := rest.Client{ShowHttpLog: true}
 ```
@@ -156,8 +158,14 @@ bettercode-oss/rest - 2021/03/11 07:06:36 Response method=GET url=http://localho
         		"age": 20
 			}
 ```
+
 ### HTTP Request Timeout 설정
-TO-DO
+Rest Client 생성할 때 `Timeout`을 지정한다.
+```go
+client := rest.Client{
+  Timeout:     10 * time.Second
+}
+```
 
 ### HTTP Request Retry
 TO-DO
