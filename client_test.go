@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -34,7 +35,6 @@ func TestClient_GetForJson(t *testing.T) {
 	// given
 	client := Client{
 		Timeout:     10 * time.Second,
-		RetryMax:    10,
 		ShowHttpLog: true,
 	}
 
@@ -87,7 +87,6 @@ func TestClient_GetForJsonWithRequestObject(t *testing.T) {
 	// given
 	client := Client{
 		Timeout:     10 * time.Second,
-		RetryMax:    10,
 		ShowHttpLog: true,
 	}
 
@@ -128,7 +127,6 @@ func TestClient_PostForJson(t *testing.T) {
 	// given
 	client := Client{
 		Timeout:     10 * time.Second,
-		RetryMax:    10,
 		ShowHttpLog: true,
 	}
 
@@ -180,7 +178,6 @@ func TestClient_PostForJsonWithResponseObject(t *testing.T) {
 	// given
 	client := Client{
 		Timeout:     10 * time.Second,
-		RetryMax:    10,
 		ShowHttpLog: true,
 	}
 
@@ -221,7 +218,6 @@ func TestClient_PutForJson(t *testing.T) {
 	// given
 	client := Client{
 		Timeout:     10 * time.Second,
-		RetryMax:    10,
 		ShowHttpLog: true,
 	}
 
@@ -257,7 +253,6 @@ func TestClient_DeleteForJson(t *testing.T) {
 	// given
 	client := Client{
 		Timeout:     10 * time.Second,
-		RetryMax:    10,
 		ShowHttpLog: true,
 	}
 
@@ -282,7 +277,7 @@ func TestClient_GetForJson_Error_Timeout(t *testing.T) {
 	// setUp WebServer Fixture
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
-			time.Sleep(20 * time.Second)
+			time.Sleep(10 * time.Second)
 
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -319,4 +314,121 @@ func TestClient_GetForJson_Error_Timeout(t *testing.T) {
 
 	// then
 	assert.NotNil(t, err)
+}
+
+func TestClient_GetForJson_Retry_Response_Http_code_500_Eventually_Success(t *testing.T) {
+	// setUp WebServer Fixture
+	serverErrorCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			if serverErrorCount < 4 {
+				w.WriteHeader(500)
+				serverErrorCount++
+			} else {
+				w.WriteHeader(200)
+				w.Header().Set("Content-Type", "application/json")
+				responseBody := `{
+					"id": "gigamadness@gmail.com",
+					"name": "Yoo Young-mo",
+					"age": 20
+				}`
+				w.Write([]byte(responseBody))
+			}
+		} else {
+			w.WriteHeader(404)
+		}
+	}))
+	defer server.Close()
+	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
+
+	// given
+	client := Client{
+		Timeout:     10 * time.Second,
+		ShowHttpLog: true,
+		RetryMax:    5,
+		RetryDelay:  1 * time.Second,
+	}
+
+	responseObject := struct {
+		Id   string `json:"id"`
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}{}
+
+	// when
+	err := client.GetForJson(fmt.Sprintf("http://localhost:%v", serverPort), nil, &responseObject)
+
+	// then
+	assert.Nil(t, err)
+	assert.Equal(t, "gigamadness@gmail.com", responseObject.Id)
+	assert.Equal(t, "Yoo Young-mo", responseObject.Name)
+	assert.Equal(t, 20, responseObject.Age)
+}
+
+func TestClient_GetForJson_Retry_Response_Http_code_500_Eventually_Failed(t *testing.T) {
+	// setUp WebServer Fixture
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			w.WriteHeader(500)
+		} else {
+			w.WriteHeader(404)
+		}
+	}))
+	defer server.Close()
+	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
+
+	// given
+	client := Client{
+		Timeout:     10 * time.Second,
+		ShowHttpLog: true,
+		RetryMax:    5,
+		RetryDelay:  1 * time.Second,
+	}
+
+	responseObject := struct {
+		Id   string `json:"id"`
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}{}
+
+	// when
+	err := client.GetForJson(fmt.Sprintf("http://localhost:%v", serverPort), nil, &responseObject)
+
+	// then
+	assert.NotNil(t, err)
+	assert.Equal(t, 5, strings.Count(err.Error(), "bettercode-oss/rest: http server error"))
+}
+
+func TestClient_GetForJson_Retry_Response_Http_code_400(t *testing.T) {
+	// setUp WebServer Fixture
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			w.WriteHeader(400)
+		} else {
+			w.WriteHeader(404)
+		}
+	}))
+	defer server.Close()
+	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
+
+	// given
+	client := Client{
+		Timeout:     10 * time.Second,
+		ShowHttpLog: true,
+		RetryMax:    5,
+		RetryDelay:  1 * time.Second,
+	}
+
+	responseObject := struct {
+		Id   string `json:"id"`
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}{}
+
+	// when
+	err := client.GetForJson(fmt.Sprintf("http://localhost:%v", serverPort), nil, &responseObject)
+
+	// then
+	assert.NotNil(t, err)
+	assert.Equal(t, 1, strings.Count(err.Error(), "bettercode-oss/rest: http server error"))
 }

@@ -35,8 +35,8 @@ json.Unmarshal(bytes, &responseBody)
 ## 제공하는 기능
 * [X] REST API 호출 Client 제공
 * [X] HTTP Request & Response 로그 지원
-* [ ] HTTP Request Timeout 지원(HTTP Request 시 특정 시간이 지나도 응답이 지연되는 경우 강제로 커넥션을 끊게 만든다)
-* [ ] HTTP Request Retry 지원(실패시 최대 재시도 횟수를 지정할 수 있게 만든다.)
+* [X] HTTP Request Timeout 지원
+* [X] HTTP Request Retry 지원
 
 ## 사용법
 ### 설치
@@ -152,11 +152,12 @@ client := rest.Client{ShowHttpLog: true}
 아래와 같이 로그를 확인할 수 있다.
 ```
 bettercode-oss/rest - 2021/03/11 07:06:36 Request method=GET url=http://localhost:51716 header=map[Authorization:[a9ace025c90c0da2161075da6ddd3492a2fca776] Content-Type:[application/json;charset=UTF-8]] body=
-bettercode-oss/rest - 2021/03/11 07:06:36 Response method=GET url=http://localhost:51716 status=200 durationMs=4 header=map[Content-Length:[89] Content-Type:[text/plain; charset=utf-8] Date:[Wed, 10 Mar 2021 22:06:36 GMT]] body={
-				"id": "gigamadness@gmail.com",
-				"name": "Yoo Young-mo",
-        		"age": 20
-			}
+bettercode-oss/rest - 2021/03/11 07:06:36 Response method=GET url=http://localhost:51716 status=200 durationMs=4 header=map[Content-Length:[89] Content-Type:[text/plain; charset=utf-8] Date:[Wed, 10 Mar 2021 22:06:36 GMT]] 
+body={
+    "id": "gigamadness@gmail.com",
+    "name": "Yoo Young-mo",
+    "age": 20
+}
 ```
 
 ### HTTP Request Timeout 설정
@@ -168,4 +169,13 @@ client := rest.Client{
 ```
 
 ### HTTP Request Retry
-TO-DO
+Rest Client 생성할 때 재시도 최대 횟수(`RetryMax`)를 지정한다.
+추가로 재시도 지연시간(`RetryDelay`)을 지정할 수 있다.
+```go
+client := rest.Client{
+  RetryMax:    5,
+  RetryDelay:  1 * time.Second,
+}
+```
+위와 같이 설정하면 HTTP 응답 코드가 500번대(Server Error)인 경우 다시 HTTP 요청한다.
+최대 5번 하게 되며 시도 사이의 지연 시간은 1초이다.

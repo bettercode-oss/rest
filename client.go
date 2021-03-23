@@ -3,8 +3,7 @@ package rest
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
+	"github.com/avast/retry-go"
 	"github.com/ernesto-jimenez/httplogger"
 	"io"
 	"io/ioutil"
@@ -30,8 +29,14 @@ func (h HttpHeader) Get(key string) string {
 	return textproto.MIMEHeader(h).Get(key)
 }
 
+var (
+	defaultAttempts = uint(1)
+	defaultDelay    = 2 * time.Second
+)
+
 type Client struct {
-	RetryMax    int // Maximum number of retries
+	RetryMax    uint
+	RetryDelay  time.Duration
 	Timeout     time.Duration
 	ShowHttpLog bool
 }
@@ -111,20 +116,58 @@ func (c Client) Do(method, url string, header HttpHeader, body io.Reader) (*http
 		Timeout:   c.Timeout,
 		Transport: httplogger.NewLoggedTransport(http.DefaultTransport, newLogger()),
 	}
-	response, err := client.Do(req)
 
-	if err != nil {
+	attempts := defaultAttempts
+	delay := defaultDelay
+
+	if c.RetryMax > 0 {
+		attempts = c.RetryMax
+	}
+
+	if c.RetryDelay > 0 {
+		delay = c.RetryDelay
+	}
+
+	var res *http.Response
+	if err := retry.Do(
+		func() error {
+			response, err := client.Do(req)
+			if err != nil {
+				return err
+			}
+
+			if response.StatusCode >= http.StatusOK && response.StatusCode <= http.StatusIMUsed {
+				res = response
+				return nil
+			}
+
+			b, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				return err
+			}
+
+			return &HttpServerError{
+				StatusCode: response.StatusCode,
+				Body:       string(b),
+			}
+		},
+		retry.RetryIf(func(err error) bool {
+			switch e := err.(type) {
+			case *HttpServerError:
+				if e.StatusCode >= http.StatusInternalServerError && e.StatusCode <= http.StatusNetworkAuthenticationRequired {
+					return true
+				}
+				return false
+			default:
+				return false
+			}
+
+			return true
+		}),
+		retry.Attempts(attempts),
+		retry.Delay(delay)); err != nil {
 		return nil, err
 	}
 
-	if response.StatusCode >= http.StatusOK && response.StatusCode <= http.StatusIMUsed {
-		return response, nil
-	} else {
-		b, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		return nil, errors.New(fmt.Sprintf("error : %v, %v", response.StatusCode, string(b)))
-	}
+	return res, nil
 }
