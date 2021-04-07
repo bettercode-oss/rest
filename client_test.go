@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func TestClient_GetForJson(t *testing.T) {
+func TestClient_Get(t *testing.T) {
 	// setUp WebServer Fixture
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
@@ -38,9 +38,6 @@ func TestClient_GetForJson(t *testing.T) {
 		ShowHttpLog: true,
 	}
 
-	header := HttpHeader{}
-	header.Set("Authorization", "a9ace025c90c0da2161075da6ddd3492a2fca776")
-
 	responseObject := struct {
 		Id   string `json:"id"`
 		Name string `json:"name"`
@@ -48,7 +45,11 @@ func TestClient_GetForJson(t *testing.T) {
 	}{}
 
 	// when
-	err := client.GetForJson(fmt.Sprintf("http://localhost:%v", serverPort), header, &responseObject)
+	err := client.
+		Request().
+		SetHeader("Authorization", "a9ace025c90c0da2161075da6ddd3492a2fca776").
+		SetResult(&responseObject).
+		Get(fmt.Sprintf("http://localhost:%v", serverPort))
 
 	// then
 	assert.Nil(t, err)
@@ -57,7 +58,7 @@ func TestClient_GetForJson(t *testing.T) {
 	assert.Equal(t, 20, responseObject.Age)
 }
 
-func TestClient_GetForJsonWithRequestObject(t *testing.T) {
+func TestClient_Get_WithRequestBody(t *testing.T) {
 	// setUp WebServer Fixture
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
@@ -103,7 +104,11 @@ func TestClient_GetForJsonWithRequestObject(t *testing.T) {
 	}{}
 
 	// when
-	err := client.GetForJsonWithRequestObject(fmt.Sprintf("http://localhost:%v", serverPort), nil, requestObject, &responseObject)
+	err := client.
+		Request().
+		SetBody(requestObject).
+		SetResult(&responseObject).
+		Get(fmt.Sprintf("http://localhost:%v", serverPort))
 
 	// then
 	assert.Nil(t, err)
@@ -112,7 +117,7 @@ func TestClient_GetForJsonWithRequestObject(t *testing.T) {
 	assert.Equal(t, 20, responseObject.Age)
 }
 
-func TestClient_PostForJson(t *testing.T) {
+func TestClient_Post(t *testing.T) {
 	// setUp WebServer Fixture
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
@@ -141,13 +146,16 @@ func TestClient_PostForJson(t *testing.T) {
 	}
 
 	// when
-	err := client.PostForJson(fmt.Sprintf("http://localhost:%v", serverPort), nil, requestObject)
+	err := client.
+		Request().
+		SetBody(requestObject).
+		Post(fmt.Sprintf("http://localhost:%v", serverPort))
 
 	// then
 	assert.Nil(t, err)
 }
 
-func TestClient_PostForJsonWithResponseObject(t *testing.T) {
+func TestClient_Post_WithResponseObject(t *testing.T) {
 	// setUp WebServer Fixture
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
@@ -194,7 +202,11 @@ func TestClient_PostForJsonWithResponseObject(t *testing.T) {
 	}{}
 
 	// when
-	err := client.PostForJsonWithResponseObject(fmt.Sprintf("http://localhost:%v", serverPort), nil, requestObject, &responseObject)
+	err := client.
+		Request().
+		SetBody(requestObject).
+		SetResult(&responseObject).
+		Post(fmt.Sprintf("http://localhost:%v", serverPort))
 
 	// then
 	assert.Nil(t, err)
@@ -203,7 +215,7 @@ func TestClient_PostForJsonWithResponseObject(t *testing.T) {
 	assert.Equal(t, 20, responseObject.Age)
 }
 
-func TestClient_PutForJson(t *testing.T) {
+func TestClient_Put(t *testing.T) {
 	// setUp WebServer Fixture
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPut {
@@ -232,13 +244,16 @@ func TestClient_PutForJson(t *testing.T) {
 	}
 
 	// when
-	err := client.PutForJson(fmt.Sprintf("http://localhost:%v", serverPort), nil, requestObject)
+	err := client.
+		Request().
+		SetBody(requestObject).
+		Put(fmt.Sprintf("http://localhost:%v", serverPort))
 
 	// then
 	assert.Nil(t, err)
 }
 
-func TestClient_DeleteForJson(t *testing.T) {
+func TestClient_Delete(t *testing.T) {
 	// setUp WebServer Fixture
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodDelete {
@@ -267,13 +282,13 @@ func TestClient_DeleteForJson(t *testing.T) {
 	}
 
 	// when
-	err := client.DeleteForJson(fmt.Sprintf("http://localhost:%v", serverPort), nil, requestObject)
+	err := client.Request().SetBody(requestObject).Delete(fmt.Sprintf("http://localhost:%v", serverPort))
 
 	// then
 	assert.Nil(t, err)
 }
 
-func TestClient_GetForJson_Error_Timeout(t *testing.T) {
+func TestClient_Error_Timeout(t *testing.T) {
 	// setUp WebServer Fixture
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
@@ -284,7 +299,7 @@ func TestClient_GetForJson_Error_Timeout(t *testing.T) {
 			responseBody := `{
 				"id": "gigamadness@gmail.com",
 				"name": "Yoo Young-mo",
-        		"age": 20
+       		"age": 20
 			}`
 			w.Write([]byte(responseBody))
 		} else {
@@ -310,13 +325,16 @@ func TestClient_GetForJson_Error_Timeout(t *testing.T) {
 	}{}
 
 	// when
-	err := client.GetForJson(fmt.Sprintf("http://localhost:%v", serverPort), header, &responseObject)
+	err := client.Request().
+		SetHeader("Authorization", "a9ace025c90c0da2161075da6ddd3492a2fca776").
+		SetResult(&responseObject).
+		Get(fmt.Sprintf("http://localhost:%v", serverPort))
 
 	// then
 	assert.NotNil(t, err)
 }
 
-func TestClient_GetForJson_Retry_Response_Http_code_500_Eventually_Success(t *testing.T) {
+func TestClient_Retry_Response_Http_code_500_Eventually_Success(t *testing.T) {
 	// setUp WebServer Fixture
 	serverErrorCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -356,7 +374,10 @@ func TestClient_GetForJson_Retry_Response_Http_code_500_Eventually_Success(t *te
 	}{}
 
 	// when
-	err := client.GetForJson(fmt.Sprintf("http://localhost:%v", serverPort), nil, &responseObject)
+	err := client.
+		Request().
+		SetResult(&responseObject).
+		Get(fmt.Sprintf("http://localhost:%v", serverPort))
 
 	// then
 	assert.Nil(t, err)
@@ -365,7 +386,7 @@ func TestClient_GetForJson_Retry_Response_Http_code_500_Eventually_Success(t *te
 	assert.Equal(t, 20, responseObject.Age)
 }
 
-func TestClient_GetForJson_Retry_Response_Http_code_500_Eventually_Failed(t *testing.T) {
+func TestClient_Retry_Response_Http_code_500_Eventually_Failed(t *testing.T) {
 	// setUp WebServer Fixture
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
@@ -392,14 +413,14 @@ func TestClient_GetForJson_Retry_Response_Http_code_500_Eventually_Failed(t *tes
 	}{}
 
 	// when
-	err := client.GetForJson(fmt.Sprintf("http://localhost:%v", serverPort), nil, &responseObject)
+	err := client.Request().SetResult(&responseObject).Get(fmt.Sprintf("http://localhost:%v", serverPort))
 
 	// then
 	assert.NotNil(t, err)
 	assert.Equal(t, 5, strings.Count(err.Error(), "bettercode-oss/rest: http server error"))
 }
 
-func TestClient_GetForJson_Retry_Response_Http_code_400(t *testing.T) {
+func TestClient_Retry_Response_Http_code_400(t *testing.T) {
 	// setUp WebServer Fixture
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
@@ -426,7 +447,10 @@ func TestClient_GetForJson_Retry_Response_Http_code_400(t *testing.T) {
 	}{}
 
 	// when
-	err := client.GetForJson(fmt.Sprintf("http://localhost:%v", serverPort), nil, &responseObject)
+	err := client.
+		Request().
+		SetResult(&responseObject).
+		Get(fmt.Sprintf("http://localhost:%v", serverPort))
 
 	// then
 	assert.NotNil(t, err)

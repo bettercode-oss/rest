@@ -41,63 +41,39 @@ type Client struct {
 	ShowHttpLog bool
 }
 
-func (c Client) GetForJson(url string, header HttpHeader, responseObject interface{}) error {
-	return c.doForJson(MethodGet, url, header, nil, responseObject)
-}
-
-func (c Client) GetForJsonWithRequestObject(url string, header HttpHeader, requestObject interface{}, responseObject interface{}) error {
-	return c.doForJson(MethodGet, url, header, requestObject, responseObject)
-}
-
-func (c Client) PostForJson(url string, header HttpHeader, requestObject interface{}) error {
-	return c.doForJson(MethodPost, url, header, requestObject, nil)
-}
-
-func (c Client) PostForJsonWithResponseObject(url string, header HttpHeader, requestObject interface{}, responseObject interface{}) error {
-	return c.doForJson(MethodPost, url, header, requestObject, responseObject)
-}
-
-func (c Client) PutForJson(url string, header HttpHeader, requestObject interface{}) error {
-	return c.doForJson(MethodPut, url, header, requestObject, nil)
-}
-
-func (c Client) DeleteForJson(url string, header HttpHeader, requestObject interface{}) error {
-	return c.doForJson(MethodDelete, url, header, requestObject, nil)
-}
-
-func (c Client) doForJson(method, url string, header HttpHeader, requestObject interface{}, responseObject interface{}) error {
-	if header == nil {
-		header = HttpHeader{}
-		header.Set("Content-Type", "application/json;charset=UTF-8")
+func (c *Client) doForJson(r *Request) error {
+	if r.header == nil {
+		r.header = HttpHeader{}
+		r.header.Set("Content-Type", "application/json;charset=UTF-8")
 	}
 
-	if len(header.Get("Content-Type")) == 0 {
-		header.Set("Content-Type", "application/json;charset=UTF-8")
+	if len(r.header.Get("Content-Type")) == 0 {
+		r.header.Set("Content-Type", "application/json;charset=UTF-8")
 	}
 
 	var requestBody io.Reader
-	if requestObject != nil {
-		marshal, err := json.Marshal(requestObject)
+	if r.body != nil {
+		marshal, err := json.Marshal(r.body)
 		if err != nil {
 			return err
 		}
 		requestBody = bytes.NewBuffer(marshal)
 	}
 
-	response, err := c.Do(method, url, header, requestBody)
+	response, err := c.do(r.method, r.url, r.header, requestBody)
 	if err != nil {
 		return err
 	}
 
 	defer response.Body.Close()
 
-	if responseObject != nil {
+	if r.result != nil {
 		b, err := ioutil.ReadAll(response.Body)
 		if err != nil {
 			return err
 		}
 
-		if err := json.Unmarshal(b, &responseObject); err != nil {
+		if err := json.Unmarshal(b, &r.result); err != nil {
 			return err
 		}
 	}
@@ -105,7 +81,7 @@ func (c Client) doForJson(method, url string, header HttpHeader, requestObject i
 	return nil
 }
 
-func (c Client) Do(method, url string, header HttpHeader, body io.Reader) (*http.Response, error) {
+func (c Client) do(method, url string, header HttpHeader, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
@@ -170,4 +146,60 @@ func (c Client) Do(method, url string, header HttpHeader, body io.Reader) (*http
 	}
 
 	return res, nil
+}
+
+func (c *Client) Request() *Request {
+	return &Request{client: c}
+}
+
+type Request struct {
+	client *Client
+	url    string
+	method string
+	header HttpHeader
+	body   interface{}
+	result interface{}
+}
+
+func (r *Request) SetHeader(key, value string) *Request {
+	if r.header == nil {
+		r.header = HttpHeader{}
+	}
+
+	r.header.Set(key, value)
+	return r
+}
+
+func (r *Request) SetBody(body interface{}) *Request {
+	r.body = body
+	return r
+}
+
+func (r *Request) SetResult(result interface{}) *Request {
+	r.result = result
+	return r
+}
+
+func (r *Request) Get(url string) error {
+	r.method = MethodGet
+	r.url = url
+	return r.client.doForJson(r)
+}
+
+func (r *Request) Post(url string) error {
+	r.method = MethodPost
+	r.url = url
+	return r.client.doForJson(r)
+}
+
+func (r *Request) Delete(url string) error {
+	r.method = MethodDelete
+	r.url = url
+	return r.client.doForJson(r)
+}
+
+func (r *Request) Put(url string) error {
+	r.method = MethodPut
+	r.url = url
+	return r.client.doForJson(r)
 }

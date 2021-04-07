@@ -1,7 +1,6 @@
 # Golang Rest Client
 
-## 배경
-Golang에서 기본적으로 제공하는 [http 패키지](https://golang.org/pkg/net/http/) 로 JSON을 기반으로 하는 REST API를 호출할 때 
+Golang에서 기본적으로 제공하는 [http 패키지](https://golang.org/pkg/net/http/) 는 JSON을 기반으로 하는 REST API를 호출할 때 
 HTTP Request/Response Body를 JSON으로 변환(json.Marshal/Unmarshal)해야 하는 불편함이 있다.
 
 아래는 GET/POST 방식 호출 예시이다.
@@ -33,10 +32,10 @@ json.Unmarshal(bytes, &responseBody)
 ```
 
 ## 제공하는 기능
-* [X] REST API 호출 Client 제공
-* [X] HTTP Request & Response 로그 지원
-* [X] HTTP Request Timeout 지원
-* [X] HTTP Request Retry 지원
+* REST 호출 시 자동 JSON 변환(마샬링/언마샬링) 제공
+* HTTP Request & Response 로그 지원
+* HTTP Request Timeout 지원
+* HTTP Request Retry 지원
 
 ## 사용법
 ### 설치
@@ -62,7 +61,10 @@ responseObject := struct {
   Age  int    `json:"age"`
 }{}
 
-err := client.GetForJson("http://example.com", nil, &responseObject)
+err := client.
+	Request().
+	SetResult(&responseObject).
+	Get("http://example.com")
 ```
 
 * POST
@@ -83,7 +85,10 @@ requestObject := struct {
   Age:  20,
 }
 
-err := client.PostForJson("http://example.com", nil, requestObject)
+err := client.
+	Request().
+	SetBody(requestObject).
+	Get("http://example.com")
 ```
 
 * PUT
@@ -104,7 +109,10 @@ requestObject := struct {
   Age:  20,
 }
 
-err := client.PutForJson("http://example.com", nil, requestObject)
+err := client.
+	Request().
+	SetBody(requestObject).
+	Put("http://example.com")
 ```
 
 * DELETE
@@ -125,7 +133,10 @@ requestObject := struct {
   Age:  20,
 }
 
-err := client.DeleteForJson("http://example.com", nil, requestObject)
+err := client.
+	Request().
+	SetBody(requestObject).
+	Delete("http://example.com")
 ```
 
 * HTTP 헤더 추가 하기
@@ -134,14 +145,17 @@ Rest Client는 기본적으로 헤더에 `Content-Type`에 `application/json;cha
 이외에 헤더를 추가하고 싶다면 아래 처럼 추가한다.
 ```go
 client := rest.Client{}
-header := rest.HttpHeader{}
-header.Set("Authorization", "a9ace025c90c0da2161075da6ddd3492a2fca776")
 responseObject := struct {
   Id   string `json:"id"`
   Name string `json:"name"`
   Age  int    `json:"age"`
 }{}
-err := client.GetForJson("http://example.com", header, &responseObject)
+
+err := client.
+	Request().
+	SetHeader("Authorization", "a9ace025c90c0da2161075da6ddd3492a2fca776").
+	SetResult(&responseObject).
+	Get("http://example.com")
 ```
 
 ### HTTP Request/Response 로깅(Logging)
