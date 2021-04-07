@@ -47,7 +47,7 @@ go get github.com/bettercode-oss/rest
 
 Rest Client는 기본적으로 HTTP Request 헤더에 `Content-Type`을 `application/json;charset=UTF-8`로 설정한다.
 
-* GET
+#### GET
 
 ```go
 import (
@@ -67,7 +67,7 @@ err := client.
 	Get("http://example.com")
 ```
 
-* POST
+#### POST
 
 ```go
 import (
@@ -91,7 +91,7 @@ err := client.
 	Get("http://example.com")
 ```
 
-* PUT
+#### PUT
 
 ```go
 import (
@@ -115,7 +115,7 @@ err := client.
 	Put("http://example.com")
 ```
 
-* DELETE
+#### DELETE
 
 ```go
 import (
@@ -139,7 +139,7 @@ err := client.
 	Delete("http://example.com")
 ```
 
-* HTTP 헤더 추가 하기
+#### HTTP 헤더 추가 하기
 
 Rest Client는 기본적으로 헤더에 `Content-Type`에 `application/json;charset=UTF-8`을 추가한다.
 이외에 헤더를 추가하고 싶다면 아래 처럼 추가한다.
