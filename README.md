@@ -88,7 +88,7 @@ requestObject := struct {
 err := client.
 	Request().
 	SetBody(requestObject).
-	Get("http://example.com")
+	Post("http://example.com")
 ```
 
 #### PUT
