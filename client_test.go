@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 )
@@ -417,7 +416,12 @@ func TestClient_Retry_Response_Http_code_500_Eventually_Failed(t *testing.T) {
 
 	// then
 	assert.NotNil(t, err)
-	assert.Equal(t, 5, strings.Count(err.Error(), "bettercode-oss/rest: http server error"))
+	if httpErr, ok := err.(*HttpServerError); ok {
+		assert.NotNil(t, httpErr)
+		assert.Equal(t, http.StatusInternalServerError, httpErr.StatusCode)
+	} else {
+		t.Fail()
+	}
 }
 
 func TestClient_Retry_Response_Http_code_400(t *testing.T) {
@@ -454,5 +458,10 @@ func TestClient_Retry_Response_Http_code_400(t *testing.T) {
 
 	// then
 	assert.NotNil(t, err)
-	assert.Equal(t, 1, strings.Count(err.Error(), "bettercode-oss/rest: http server error"))
+	if httpErr, ok := err.(*HttpServerError); ok {
+		assert.NotNil(t, httpErr)
+		assert.Equal(t, http.StatusBadRequest, httpErr.StatusCode)
+	} else {
+		t.Fail()
+	}
 }
