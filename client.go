@@ -62,6 +62,18 @@ func (c *Client) doForJson(r *Request) error {
 
 	response, err := c.do(r.method, r.url, r.header, requestBody)
 	if err != nil {
+		if rerrs, ok := err.(retry.Error); ok {
+			if len(rerrs) > 0 {
+				var lastErr error
+				for _, aErr := range rerrs {
+					if aErr != nil {
+						lastErr = aErr
+					}
+				}
+				return lastErr
+			}
+		}
+
 		return err
 	}
 

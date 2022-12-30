@@ -194,3 +194,17 @@ client := rest.Client{
 ```
 위와 같이 설정하면 HTTP 응답 코드가 500번대(Server Error)인 경우 다시 HTTP 요청한다.
 최대 5번 하게 되며 시도 사이의 지연 시간은 1초이다.
+
+### Error 처리
+HTTP Status 에 따라 에러 처리가 필요한 경우 아래와 같이 확인할 수 있다.
+주의. HttpServerError 만 반환하는 것은 아니다. HTTP Request 과정에서 발생한 error 만  HttpServerError를 반환한다.
+```go
+err := client.
+		Request().
+		SetResult(&responseObject).
+		Get("http://example.com/err-url")
+
+if httpErr, ok := err.(*HttpServerError); ok {
+	// ...  		
+}
+```
