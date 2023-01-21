@@ -208,3 +208,12 @@ if httpErr, ok := err.(*HttpServerError); ok {
 	// ...  		
 }
 ```
+
+### SSL 인증서 오류(x509) 무시 옵션
+`InsecureSkipVerify` 를 true로 설정한다.
+```go
+client := rest.Client{
+  // ...
+  InsecureSkipVerify: true,
+}
+```
