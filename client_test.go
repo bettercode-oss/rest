@@ -465,3 +465,32 @@ func TestClient_Retry_Response_Http_code_400(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestClient_SSL_x509_error(t *testing.T) {
+	// x509 error test server
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			w.WriteHeader(200)
+		} else {
+			w.WriteHeader(404)
+		}
+	}))
+
+	defer server.Close()
+	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
+
+	client := Client{
+		Timeout:            10 * time.Second,
+		ShowHttpLog:        true,
+		RetryMax:           5,
+		RetryDelay:         1 * time.Second,
+		InsecureSkipVerify: true,
+	}
+
+	// when
+	err := client.
+		Request().
+		Get(fmt.Sprintf("https://localhost:%v", serverPort))
+
+	assert.Nil(t, err)
+}

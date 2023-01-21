@@ -2,6 +2,7 @@ package rest
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"github.com/avast/retry-go"
 	"github.com/ernesto-jimenez/httplogger"
@@ -35,10 +36,11 @@ var (
 )
 
 type Client struct {
-	RetryMax    uint
-	RetryDelay  time.Duration
-	Timeout     time.Duration
-	ShowHttpLog bool
+	RetryMax           uint
+	RetryDelay         time.Duration
+	Timeout            time.Duration
+	ShowHttpLog        bool
+	InsecureSkipVerify bool
 }
 
 func (c *Client) doForJson(r *Request) error {
@@ -99,10 +101,17 @@ func (c Client) do(method, url string, header HttpHeader, body io.Reader) (*http
 		return nil, err
 	}
 
+	transport := http.DefaultTransport
+	if c.InsecureSkipVerify {
+		transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // ignore expired SSL certificates
+		}
+	}
+
 	req.Header = http.Header(header)
 	client := &http.Client{
 		Timeout:   c.Timeout,
-		Transport: httplogger.NewLoggedTransport(http.DefaultTransport, newLogger()),
+		Transport: httplogger.NewLoggedTransport(transport, newLogger()),
 	}
 
 	attempts := defaultAttempts
