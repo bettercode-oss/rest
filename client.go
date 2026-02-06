@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/avast/retry-go"
-	"github.com/ernesto-jimenez/httplogger"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/textproto"
 	"time"
+
+	"github.com/avast/retry-go"
+	"github.com/ernesto-jimenez/httplogger"
 )
 
 type HttpHeader map[string][]string
@@ -19,6 +20,7 @@ const (
 	MethodGet    = "GET"
 	MethodPost   = "POST"
 	MethodPut    = "PUT"
+	MethodPatch  = "PATCH"
 	MethodDelete = "DELETE"
 )
 
@@ -221,6 +223,12 @@ func (r *Request) Delete(url string) error {
 
 func (r *Request) Put(url string) error {
 	r.method = MethodPut
+	r.url = url
+	return r.client.doForJson(r)
+}
+
+func (r *Request) Patch(url string) error {
+	r.method = MethodPatch
 	r.url = url
 	return r.client.doForJson(r)
 }
