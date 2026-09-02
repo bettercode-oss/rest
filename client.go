@@ -57,11 +57,21 @@ func (c *Client) doForJson(r *Request) error {
 
 	var requestBody io.Reader
 	if r.body != nil {
-		marshal, err := json.Marshal(r.body)
-		if err != nil {
-			return err
+		if r.isBodyEscapeHTML == false {
+			var buf bytes.Buffer
+			encoder := json.NewEncoder(&buf)
+			encoder.SetEscapeHTML(false)
+			if err := encoder.Encode(r.body); err != nil {
+				return err
+			}
+			requestBody = &buf
+		} else {
+			marshal, err := json.Marshal(r.body)
+			if err != nil {
+				return err
+			}
+			requestBody = bytes.NewBuffer(marshal)
 		}
-		requestBody = bytes.NewBuffer(marshal)
 	}
 
 	response, err := c.do(r.method, r.url, r.header, requestBody)
@@ -172,16 +182,17 @@ func (c Client) do(method, url string, header HttpHeader, body io.Reader) (*http
 }
 
 func (c *Client) Request() *Request {
-	return &Request{client: c}
+	return &Request{client: c, isBodyEscapeHTML: true}
 }
 
 type Request struct {
-	client *Client
-	url    string
-	method string
-	header HttpHeader
-	body   interface{}
-	result interface{}
+	client           *Client
+	url              string
+	method           string
+	header           HttpHeader
+	body             interface{}
+	result           interface{}
+	isBodyEscapeHTML bool
 }
 
 func (r *Request) SetHeader(key, value string) *Request {
@@ -200,6 +211,11 @@ func (r *Request) SetBody(body interface{}) *Request {
 
 func (r *Request) SetResult(result interface{}) *Request {
 	r.result = result
+	return r
+}
+
+func (r *Request) SetBodyEscapeHTML(escapeHTML bool) *Request {
+	r.isBodyEscapeHTML = escapeHTML
 	return r
 }
 
